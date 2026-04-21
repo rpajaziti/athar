@@ -1,0 +1,93 @@
+@import "tailwindcss";
+
+@import "@fontsource/plus-jakarta-sans/400.css";
+@import "@fontsource/plus-jakarta-sans/500.css";
+@import "@fontsource/plus-jakarta-sans/600.css";
+@import "@fontsource/plus-jakarta-sans/700.css";
+@import "@fontsource/plus-jakarta-sans/800.css";
+@import "@fontsource/jetbrains-mono/400.css";
+@import "@fontsource/jetbrains-mono/700.css";
+@import "@fontsource/noto-naskh-arabic/400.css";
+@import "@fontsource/noto-naskh-arabic/700.css";
+@import "@fontsource/amiri/400.css";
+@import "@fontsource/amiri/700.css";
+@import "@fontsource/amiri-quran/400.css";
+
+@theme {
+  /* Surfaces — warm, parchment-adjacent but clean */
+  --color-bg: oklch(0.985 0.006 85);
+  --color-bg-sunk: oklch(0.965 0.008 85);
+  --color-card: #ffffff;
+  --color-hairline: oklch(0.90 0.008 85);
+  --color-hairline-2: oklch(0.94 0.008 85);
+
+  /* Ink (text) — deep blue-black */
+  --color-ink: oklch(0.22 0.015 265);
+  --color-ink-soft: oklch(0.42 0.012 265);
+  --color-ink-muted: oklch(0.58 0.010 265);
+
+  /* Hero — mushaf teal-green */
+  --color-hero: oklch(0.52 0.095 170);
+  --color-hero-deep: oklch(0.38 0.080 170);
+  --color-hero-soft: oklch(0.94 0.030 170);
+  --color-hero-ink: oklch(0.30 0.080 170);
+
+  /* Difficulty triad — matched chroma/lightness, varied hue */
+  --color-easy: oklch(0.62 0.10 150);
+  --color-easy-soft: oklch(0.95 0.035 150);
+  --color-easy-deep: oklch(0.36 0.08 150);
+
+  --color-medium: oklch(0.70 0.12 70);
+  --color-medium-soft: oklch(0.96 0.04 70);
+  --color-medium-deep: oklch(0.42 0.09 60);
+
+  --color-hard: oklch(0.58 0.14 35);
+  --color-hard-soft: oklch(0.95 0.035 35);
+  --color-hard-deep: oklch(0.38 0.11 35);
+
+  /* Semantic */
+  --color-correct: oklch(0.62 0.13 150);
+  --color-incorrect: oklch(0.58 0.18 25);
+  --color-warn: oklch(0.72 0.14 75);
+
+  /* Fonts */
+  --font-sans: "Plus Jakarta Sans", -apple-system, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+  --font-arabic-ui: "Noto Naskh Arabic", "Amiri", serif;
+  --font-arabic-ayah: "Amiri Quran", "Amiri", serif;
+
+  /* Radii */
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --radius-xl: 28px;
+
+  /* Shadows — soft, no drama */
+  --shadow-soft-sm: 0 1px 2px rgba(20, 30, 50, 0.04), 0 2px 6px rgba(20, 30, 50, 0.03);
+  --shadow-soft-md: 0 2px 6px rgba(20, 30, 50, 0.05), 0 8px 20px rgba(20, 30, 50, 0.05);
+  --shadow-soft-lg: 0 4px 12px rgba(20, 30, 50, 0.06), 0 16px 40px rgba(20, 30, 50, 0.08);
+}
+
+@layer base {
+  html,
+  body,
+  #root {
+    min-height: 100%;
+    background: var(--color-bg);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  body {
+    margin: 0;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-hero);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+}
