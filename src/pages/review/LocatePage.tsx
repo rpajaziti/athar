@@ -153,49 +153,48 @@ export function LocatePage() {
       total={total}
       current={idx}
     >
-      <div className="rounded-xl border border-hairline bg-card p-6 shadow-soft-sm">
+      <div className="rounded-xl border border-hairline bg-card p-4 shadow-soft-sm sm:p-5">
         <div className="font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-ink-muted">
           Identify the sūrah and ayah
         </div>
         <div
           dir="rtl"
-          className="mt-3 text-center text-ink"
+          className="mt-2 text-center text-ink"
           style={{
             fontFamily: 'var(--font-arabic-ayah)',
-            fontSize: 'clamp(24px, 5.5vw, 34px)',
-            lineHeight: 2,
+            fontSize: 'clamp(20px, 5vw, 30px)',
+            lineHeight: 1.8,
           }}
         >
           … {current.phrase} …
         </div>
       </div>
 
-      <div className="mt-6 grid gap-3">
+      <div className="mt-4 grid grid-cols-2 gap-2 sm:gap-3">
         {current.options.map((opt) => {
           const k = keyOf(opt)
           return (
             <OptionButton
               key={k}
-              full
               locked={picked !== null}
               state={optionState(picked, k, targetKey)}
               onClick={() => handlePick(opt)}
             >
-              <div className="flex w-full items-center justify-between gap-3">
-                <div className="text-left">
-                  <div className="text-[14px] font-bold text-ink">
-                    {opt.surahName}
-                  </div>
+              <div className="flex w-full flex-col items-start gap-0.5">
+                <div className="text-[13px] font-bold text-ink">
+                  {opt.surahName}
+                </div>
+                <div className="flex w-full items-baseline justify-between gap-2">
                   <div className="font-mono text-[10px] uppercase tracking-[0.18em] text-ink-muted">
                     Ayah {opt.ayahNumber}
                   </div>
-                </div>
-                <div
-                  dir="rtl"
-                  className="text-[16px] text-ink-soft"
-                  style={{ fontFamily: 'var(--font-arabic-ui)' }}
-                >
-                  {opt.surahArabic}
+                  <div
+                    dir="rtl"
+                    className="text-[14px] text-ink-soft"
+                    style={{ fontFamily: 'var(--font-arabic-ui)' }}
+                  >
+                    {opt.surahArabic}
+                  </div>
                 </div>
               </div>
             </OptionButton>
@@ -203,7 +202,7 @@ export function LocatePage() {
         })}
       </div>
 
-      <div className="mt-6">
+      <div className="mt-4">
         <Feedback
           show={picked !== null}
           correct={correct}
@@ -218,7 +217,7 @@ export function LocatePage() {
         tone="ink"
         disabled={picked === null}
         onClick={handleAdvance}
-        className={cn('mt-8')}
+        className={cn('mt-5')}
       >
         {picked === null
           ? 'Pick a location'

@@ -1,3 +1,5 @@
+import { supabase } from './supabase'
+
 export type Tier = 'easy' | 'medium' | 'hard' | 'expert' | 'foundations'
 
 export interface TierRecord {
@@ -106,6 +108,155 @@ function write(data: ProgressData): void {
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(data))
   } catch {
     /* quota or private mode — silently ignore */
+  }
+  schedulePush(data)
+}
+
+let pushTimer: number | null = null
+let lastPushed: string | null = null
+function schedulePush(data: ProgressData): void {
+  if (!supabase) return
+  if (typeof window === 'undefined') return
+  if (pushTimer !== null) window.clearTimeout(pushTimer)
+  pushTimer = window.setTimeout(() => {
+    pushTimer = null
+    void pushNow(data)
+  }, 1200)
+}
+
+async function pushNow(data: ProgressData): Promise<void> {
+  if (!supabase) return
+  const serialized = JSON.stringify(data)
+  if (serialized === lastPushed) return
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) return
+  const { error } = await supabase
+    .from('user_progress')
+    .upsert(
+      { user_id: user.id, data, updated_at: new Date().toISOString() },
+      { onConflict: 'user_id' },
+    )
+  if (!error) lastPushed = serialized
+}
+
+function mergeProgress(cloud: ProgressData, local: ProgressData): ProgressData {
+  const out: ProgressData = { ...cloud }
+  out.streak = Math.max(cloud.streak, local.streak)
+  const cloudDay = cloud.lastActiveDay ?? ''
+  const localDay = local.lastActiveDay ?? ''
+  out.lastActiveDay = cloudDay >= localDay ? cloud.lastActiveDay : local.lastActiveDay
+  out.totalAttempts = Math.max(cloud.totalAttempts, local.totalAttempts)
+  out.totalCorrect = Math.max(cloud.totalCorrect, local.totalCorrect)
+
+  const surahIds = new Set([
+    ...Object.keys(cloud.surahs ?? {}),
+    ...Object.keys(local.surahs ?? {}),
+  ])
+  const mergedSurahs: Record<string, SurahRecord> = {}
+  const tiers: ReviewTier[] = ['easy', 'medium', 'hard', 'expert']
+  for (const id of surahIds) {
+    const c = cloud.surahs[id] ?? {}
+    const l = local.surahs[id] ?? {}
+    const rec: SurahRecord = {}
+    for (const t of tiers) {
+      rec[t] = mergeTierRecord(c[t], l[t])
+    }
+    mergedSurahs[id] = stripUndefined(rec)
+  }
+  out.surahs = mergedSurahs
+  out.foundations = mergeTierRecord(cloud.foundations, local.foundations)
+
+  out.known = Array.from(new Set([...(cloud.known ?? []), ...(local.known ?? [])])).sort(
+    (a, b) => a - b,
+  )
+  out.reviewTiers =
+    cloud.reviewTiers && cloud.reviewTiers.length > 0 ? cloud.reviewTiers : local.reviewTiers
+  out.rasmOnly = cloud.rasmOnly || local.rasmOnly
+  out.reciter = cloud.reciter ?? local.reciter
+  out.autoplay = cloud.autoplay ?? local.autoplay
+
+  const bookmarkKey = (b: Bookmark) => `${b.surahId}:${b.ayahNumber}`
+  const bookmarkMap = new Map<string, Bookmark>()
+  for (const b of [...(cloud.bookmarks ?? []), ...(local.bookmarks ?? [])]) {
+    const k = bookmarkKey(b)
+    const existing = bookmarkMap.get(k)
+    if (!existing || b.addedAt < existing.addedAt) bookmarkMap.set(k, b)
+  }
+  out.bookmarks = Array.from(bookmarkMap.values()).sort((a, b) => b.addedAt - a.addedAt)
+
+  return out
+}
+
+function mergeTierRecord(
+  a: TierRecord | undefined,
+  b: TierRecord | undefined,
+): TierRecord | undefined {
+  if (!a) return b
+  if (!b) return a
+  return {
+    attempts: Math.max(a.attempts, b.attempts),
+    bestScore: Math.max(a.bestScore, b.bestScore),
+    lastScore: a.lastAt >= b.lastAt ? a.lastScore : b.lastScore,
+    lastAt: Math.max(a.lastAt, b.lastAt),
+  }
+}
+
+function stripUndefined(rec: SurahRecord): SurahRecord {
+  const out: SurahRecord = {}
+  if (rec.easy) out.easy = rec.easy
+  if (rec.medium) out.medium = rec.medium
+  if (rec.hard) out.hard = rec.hard
+  if (rec.expert) out.expert = rec.expert
+  return out
+}
+
+export async function syncOnLogin(userId: string): Promise<void> {
+  if (!supabase) return
+  if (typeof window === 'undefined') return
+  const mergeKey = `athar:merged:${userId}`
+  const alreadyMerged = window.localStorage.getItem(mergeKey)
+
+  const { data, error } = await supabase
+    .from('user_progress')
+    .select('data')
+    .eq('user_id', userId)
+    .maybeSingle()
+  if (error) return
+
+  const cloud = (data?.data ?? null) as ProgressData | null
+  const local = read()
+
+  if (!alreadyMerged && cloud) {
+    const merged = mergeProgress(cloud, local)
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(merged))
+    lastPushed = null
+    await pushNow(merged)
+    window.localStorage.setItem(mergeKey, '1')
+  } else if (cloud) {
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(cloud))
+    lastPushed = JSON.stringify(cloud)
+  } else {
+    lastPushed = null
+    await pushNow(local)
+    window.localStorage.setItem(mergeKey, '1')
+  }
+}
+
+export function clearSyncMarker(userId: string): void {
+  if (typeof window === 'undefined') return
+  window.localStorage.removeItem(`athar:merged:${userId}`)
+}
+
+export function clearLocalOnSignOut(userId: string | null): void {
+  if (typeof window === 'undefined') return
+  window.localStorage.removeItem(STORAGE_KEY)
+  if (userId) window.localStorage.removeItem(`athar:merged:${userId}`)
+  lastPushed = null
+  if (pushTimer !== null) {
+    window.clearTimeout(pushTimer)
+    pushTimer = null
   }
 }
 

@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { DrillShell } from '@/components/drill/DrillShell'
 import { OptionButton, optionState } from '@/components/ui/OptionButton'
 import { Feedback } from '@/components/ui/Feedback'
@@ -8,6 +8,7 @@ import { Icon } from '@/components/ui/Icon'
 import { LETTER_CONFUSABLES } from '@/data/confusables'
 import { sample, shuffle } from '@/lib/drill'
 import { recordAttempt } from '@/lib/progress'
+import { speakArabic, speechSupported } from '@/lib/audio'
 
 interface Round {
   target: string
@@ -41,10 +42,17 @@ export function FoundationsPage() {
     Array.from({ length: ROUND_COUNT }, () => null),
   )
   const [done, setDone] = useState(false)
+  const audioOn = speechSupported()
 
   const current = rounds[currentIdx]
   const picked = picks[currentIdx]
   const correct = picked === current.target
+
+  useEffect(() => {
+    if (!audioOn || done) return
+    const t = window.setTimeout(() => speakArabic(current.target), 250)
+    return () => window.clearTimeout(t)
+  }, [currentIdx, current.target, audioOn, done])
 
   const answers = useMemo<DrillAnswer[]>(
     () =>
@@ -57,6 +65,7 @@ export function FoundationsPage() {
 
   const handlePick = (opt: string) => {
     if (picked !== null) return
+    if (audioOn) speakArabic(opt)
     const next = [...picks]
     next[currentIdx] = opt
     setPicks(next)
@@ -104,6 +113,17 @@ export function FoundationsPage() {
       total={ROUND_COUNT}
       current={currentIdx}
     >
+      {audioOn && (
+        <button
+          type="button"
+          onClick={() => speakArabic(current.target)}
+          className="mb-4 inline-flex items-center gap-2 rounded-full border border-hairline bg-surface px-3.5 py-2 text-[12px] font-semibold text-ink-soft transition-colors hover:border-ink/30 hover:text-ink"
+        >
+          <Icon name="speaker" size={14} />
+          Hear {current.latin}
+        </button>
+      )}
+
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         {current.options.map((opt) => (
           <OptionButton

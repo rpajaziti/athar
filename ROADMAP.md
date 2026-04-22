@@ -100,7 +100,44 @@ Build toward **Musābaqah mode** — a real Qurʾān-competition format where hu
 
 ---
 
-## v5+ — Beyond
+## v5 — Supabase social (in progress)
+
+**Phase 1 — auth + progress sync ✅ shipped**
+- [x] Supabase project + RLS on `profiles`, `user_progress` (JSONB data blob)
+- [x] Google OAuth + magic link (implicit flow — cross-device magic links work)
+- [x] Local→cloud merge on first login, replace-on-login after that
+- [x] Signout clears local progress + merge marker
+- [x] Settings (reciter / rasm / autoplay / review tiers) ride inside the progress JSON — already synced
+
+**Phase 2a — handles + friends (in progress)**
+- [ ] Migration: `handle citext unique` on `profiles` + `friendships` table
+- [ ] Friendship model `(requester_id, addressee_id, status)` with RLS so only the two parties can see the row
+- [ ] Security-definer RPC `search_users(query)` returning only public fields (no profile enumeration)
+- [ ] Handle picker banner on HomePage when signed-in user has no handle yet
+- [ ] `/friends` page — Friends / Requests in / Sent out tabs; search by handle; accept / decline / remove
+- [ ] Friends count chip on HomePage header
+
+**Phase 2b — leaderboard (after 2a lands)**
+- [ ] SQL view `friend_stats` deriving streak / drills_7d / accuracy_7d from `user_progress.data`
+- [ ] `/leaderboard` page — weekly board of you + friends, sortable
+- [ ] Leaderboard link on HomePage header
+
+**Phase 3 — realtime Musābaqah (later, after 2b)**
+- [ ] Challenge a friend → both get the same seeded rounds via Supabase Realtime
+- [ ] Live score updates; winner by accuracy then speed
+- [ ] Shared weak-spot review targeting a friend's worst sūrahs
+
+**Deferred / maybe**
+- Global leaderboard (moderation burden)
+- Avatar upload (currently Google OAuth only)
+- Profile editing / handle rename with cooldown
+- Chat / comments
+- Export-import progress JSON
+- Group study rooms
+
+---
+
+## v6+ — Beyond
 
 - **Native iOS + Android via Capacitor** — bootstrapped ✅ (`ios/` + `android/` projects, status bar + splash + back-button handlers, safe-area insets). Run `npm run mobile:ios` / `npm run mobile:android` to open in Xcode / Android Studio.
 - Multiple qirāʾāt (Warsh, Qālūn, etc.) — not just Hafs

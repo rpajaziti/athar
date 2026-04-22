@@ -81,6 +81,7 @@ export function LandingPage() {
         <Hero />
         <HowItWorks />
         <Tiers />
+        <BeyondTiers />
         <TrustDisclaimer />
         <FooterCTA />
       </main>
@@ -310,6 +311,138 @@ function TierCard({ tier }: { tier: (typeof TIERS)[number] }) {
       </div>
       <p className="text-[13px] leading-relaxed text-ink-soft">{tier.body}</p>
     </div>
+  )
+}
+
+function BeyondTiers() {
+  const groups: Array<{
+    eyebrow: string
+    title: string
+    body: string
+    icon: IconName
+    tone: 'hero' | 'medium' | 'hard'
+    items: string[]
+  }> = [
+    {
+      eyebrow: 'Musābaqah',
+      title: 'Competition drills.',
+      body: 'The formats used in real Qurʾān competitions — test any ayah against any other.',
+      icon: 'target',
+      tone: 'hero',
+      items: [
+        'Continue from here — chain through a whole sūrah',
+        'What comes next / came before',
+        'Locate a middle phrase',
+        'Connect the sūrahs — end of X to opener of X+1',
+        'Marathon — a full juzʾ against the clock',
+      ],
+    },
+    {
+      eyebrow: 'Listen',
+      title: 'Three reciters, one tap.',
+      body: 'Continuous auto-advancing playback with scroll-follow, per-ayah listen, and rasm-only display.',
+      icon: 'ear',
+      tone: 'medium',
+      items: [
+        'Ḥuṣarī · Mishary · Minshāwī',
+        'Listen a whole sūrah or juzʾ end-to-end',
+        'Tap-to-hear on every ayah',
+        'Rasm-only toggle strips the ḥarakāt',
+      ],
+    },
+    {
+      eyebrow: 'Judge & review',
+      title: 'Know where you’re soft.',
+      body: 'Athar watches every miss and feeds it back. Self-judge a recitation, or let the app pick your weakest spot.',
+      icon: 'shield',
+      tone: 'hard',
+      items: [
+        'Judge mode — solid / shaky / missed per ayah',
+        'Weak-spot review — auto-targets your misses',
+        'Murājaʿah simulator — reveal, then self-grade',
+        '60-second sprint and daily picked drill',
+      ],
+    },
+  ]
+
+  const toneMap: Record<'hero' | 'medium' | 'hard', { icon: string; bg: string; ring: string; label: string }> = {
+    hero: {
+      icon: 'var(--color-hero-deep)',
+      bg: 'var(--color-hero-soft)',
+      ring: 'color-mix(in oklch, var(--color-hero) 35%, transparent)',
+      label: 'var(--color-hero-deep)',
+    },
+    medium: {
+      icon: 'var(--color-medium-deep)',
+      bg: 'var(--color-medium-soft)',
+      ring: 'color-mix(in oklch, var(--color-medium) 35%, transparent)',
+      label: 'var(--color-medium-deep)',
+    },
+    hard: {
+      icon: 'var(--color-hard-deep)',
+      bg: 'var(--color-hard-soft)',
+      ring: 'color-mix(in oklch, var(--color-hard) 35%, transparent)',
+      label: 'var(--color-hard-deep)',
+    },
+  }
+
+  return (
+    <section className="border-t border-hairline py-16">
+      <div className="mx-auto max-w-3xl text-center">
+        <div className="inline-flex items-center gap-2 rounded-full border border-hairline bg-card px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-ink-soft shadow-soft-sm">
+          <Icon name="sparkles" size={12} className="text-hero" />
+          Beyond the ladder
+        </div>
+        <h2 className="mt-3 text-balance text-[26px] font-extrabold tracking-tight text-ink sm:text-[32px]">
+          A full Musābaqah engine, not just fill-in-blanks.
+        </h2>
+        <p className="mt-3 text-balance text-[14px] leading-relaxed text-ink-soft">
+          Precision is only half the story. Athar also tests your map of the Qurʾān —
+          what comes after, what came before, where a phrase lives, which sūrah it is.
+        </p>
+      </div>
+
+      <div className="mx-auto mt-10 grid max-w-6xl gap-4 sm:grid-cols-3">
+        {groups.map((g) => {
+          const t = toneMap[g.tone]
+          return (
+            <div
+              key={g.title}
+              className="flex flex-col gap-3 rounded-lg border border-hairline bg-card p-5 shadow-soft-sm"
+            >
+              <div className="flex items-center justify-between">
+                <div
+                  className="flex h-10 w-10 items-center justify-center rounded-md border"
+                  style={{ background: t.bg, borderColor: t.ring, color: t.icon }}
+                >
+                  <Icon name={g.icon} size={18} />
+                </div>
+                <span
+                  className="font-mono text-[10px] font-bold uppercase tracking-[0.18em]"
+                  style={{ color: t.label }}
+                >
+                  {g.eyebrow}
+                </span>
+              </div>
+              <div>
+                <div className="text-[17px] font-extrabold tracking-tight text-ink">
+                  {g.title}
+                </div>
+                <p className="mt-2 text-[13px] leading-relaxed text-ink-soft">{g.body}</p>
+              </div>
+              <ul className="mt-1 space-y-1.5 text-[12px] leading-relaxed text-ink-soft">
+                {g.items.map((it) => (
+                  <li key={it} className="flex items-start gap-2">
+                    <Icon name="check" size={12} className="mt-0.5 flex-none text-correct" />
+                    <span>{it}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )
+        })}
+      </div>
+    </section>
   )
 }
 

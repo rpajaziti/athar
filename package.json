@@ -25,6 +25,7 @@
     "@fontsource/jetbrains-mono": "^5.2.8",
     "@fontsource/noto-naskh-arabic": "^5.2.11",
     "@fontsource/plus-jakarta-sans": "^5.2.8",
+    "@supabase/supabase-js": "^2.104.0",
     "@tailwindcss/vite": "^4.2.2",
     "clsx": "^2.1.1",
     "react": "^19.2.5",

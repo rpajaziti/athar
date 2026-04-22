@@ -5,7 +5,7 @@ const config: CapacitorConfig = {
   appName: 'Athar',
   webDir: 'dist',
   ios: {
-    contentInset: 'always',
+    contentInset: 'never',
   },
   android: {
     allowMixedContent: false,

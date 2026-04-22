@@ -1,4 +1,5 @@
 import { createBrowserRouter } from 'react-router-dom'
+import { RootLayout } from './components/RootLayout'
 import { LandingPage } from './pages/landing/LandingPage'
 import { OnboardingPage } from './pages/onboarding/OnboardingPage'
 import { HomePage } from './pages/home/HomePage'
@@ -29,36 +30,50 @@ import { EndingsPage } from './pages/drill/EndingsPage'
 import { ContinuePage } from './pages/drill/ContinuePage'
 import { SettingsPage } from './pages/settings/SettingsPage'
 import { BookmarksPage } from './pages/bookmarks/BookmarksPage'
+import { ExamplesPage } from './pages/examples/ExamplesPage'
+import { SurahPage } from './pages/surah/SurahPage'
+import { LoginPage } from './pages/auth/LoginPage'
+import { CallbackPage } from './pages/auth/CallbackPage'
+import { FriendsPage } from './pages/friends/FriendsPage'
 
 export const router = createBrowserRouter([
-  { path: '/', element: <LandingPage /> },
-  { path: '/onboarding', element: <OnboardingPage /> },
-  { path: '/home', element: <HomePage /> },
-  { path: '/drill/foundations', element: <FoundationsPage /> },
-  { path: '/drill/:surahId/easy', element: <EasyPage /> },
-  { path: '/drill/:surahId/medium', element: <MediumPage /> },
-  { path: '/drill/:surahId/hard', element: <HardPage /> },
-  { path: '/drill/:surahId/expert', element: <ExpertPage /> },
-  { path: '/drill/:surahId/scramble', element: <ScramblePage /> },
-  { path: '/drill/:surahId/wordorder', element: <WordOrderPage /> },
-  { path: '/drill/:surahId/passage', element: <PassagePage /> },
-  { path: '/drill/:surahId/audio', element: <AudioCuePage /> },
-  { path: '/review/pick', element: <KnownPickPage /> },
-  { path: '/review/mixed', element: <MixedReviewPage /> },
-  { path: '/review/weak', element: <WeakSpotReviewPage /> },
-  { path: '/review/which-surah', element: <WhichSurahPage /> },
-  { path: '/review/meaning', element: <MeaningMatchPage /> },
-  { path: '/review/juz/:juz/endings', element: <JuzEndingsPage /> },
-  { path: '/review/next', element: <NextAyahPage /> },
-  { path: '/review/locate', element: <LocatePage /> },
-  { path: '/review/connect', element: <ConnectPage /> },
-  { path: '/judge/:surahId', element: <JudgePage /> },
-  { path: '/listen/:surahId', element: <ListenPage /> },
-  { path: '/listen/juz/:juz', element: <JuzListenPage /> },
-  { path: '/drill/write', element: <WritePage /> },
-  { path: '/drill/:surahId/recite', element: <RecitePage /> },
-  { path: '/drill/:surahId/endings', element: <EndingsPage /> },
-  { path: '/drill/:surahId/continue', element: <ContinuePage /> },
-  { path: '/settings', element: <SettingsPage /> },
-  { path: '/bookmarks', element: <BookmarksPage /> },
+  {
+    element: <RootLayout />,
+    children: [
+      { path: '/', element: <LandingPage /> },
+      { path: '/onboarding', element: <OnboardingPage /> },
+      { path: '/home', element: <HomePage /> },
+      { path: '/drill/foundations', element: <FoundationsPage /> },
+      { path: '/drill/:surahId/easy', element: <EasyPage /> },
+      { path: '/drill/:surahId/medium', element: <MediumPage /> },
+      { path: '/drill/:surahId/hard', element: <HardPage /> },
+      { path: '/drill/:surahId/expert', element: <ExpertPage /> },
+      { path: '/drill/:surahId/scramble', element: <ScramblePage /> },
+      { path: '/drill/:surahId/wordorder', element: <WordOrderPage /> },
+      { path: '/drill/:surahId/passage', element: <PassagePage /> },
+      { path: '/drill/:surahId/audio', element: <AudioCuePage /> },
+      { path: '/review/pick', element: <KnownPickPage /> },
+      { path: '/review/mixed', element: <MixedReviewPage /> },
+      { path: '/review/weak', element: <WeakSpotReviewPage /> },
+      { path: '/review/which-surah', element: <WhichSurahPage /> },
+      { path: '/review/meaning', element: <MeaningMatchPage /> },
+      { path: '/review/juz/:juz/endings', element: <JuzEndingsPage /> },
+      { path: '/review/next', element: <NextAyahPage /> },
+      { path: '/review/locate', element: <LocatePage /> },
+      { path: '/review/connect', element: <ConnectPage /> },
+      { path: '/judge/:surahId', element: <JudgePage /> },
+      { path: '/listen/:surahId', element: <ListenPage /> },
+      { path: '/listen/juz/:juz', element: <JuzListenPage /> },
+      { path: '/drill/write', element: <WritePage /> },
+      { path: '/drill/:surahId/recite', element: <RecitePage /> },
+      { path: '/drill/:surahId/endings', element: <EndingsPage /> },
+      { path: '/drill/:surahId/continue', element: <ContinuePage /> },
+      { path: '/settings', element: <SettingsPage /> },
+      { path: '/bookmarks', element: <BookmarksPage /> },
+      { path: '/examples', element: <ExamplesPage /> },
+      { path: '/surah/:surahId', element: <SurahPage /> },
+      { path: '/login', element: <LoginPage /> },
+      { path: '/auth/callback', element: <CallbackPage /> },
+    ],
+  },
 ])
