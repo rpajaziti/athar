@@ -64,6 +64,13 @@ export function HomePage() {
             </div>
           )}
           <Link
+            to="/bookmarks"
+            className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-ink-muted transition-colors hover:text-ink"
+          >
+            <Icon name="star" size={14} />
+            Starred
+          </Link>
+          <Link
             to="/settings"
             className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-ink-muted transition-colors hover:text-ink"
           >
@@ -184,6 +191,34 @@ export function HomePage() {
                   <Icon name="book" size={14} />
                   Meaning match
                 </Link>
+                <Link
+                  to="/review/next"
+                  className="inline-flex items-center gap-1.5 rounded-[14px] border border-hairline bg-card px-5 py-3 text-[14px] font-bold text-ink shadow-soft-sm transition-colors hover:bg-bg-sunk"
+                >
+                  <Icon name="arrow-r" size={14} />
+                  What comes next?
+                </Link>
+                <Link
+                  to="/review/next?dir=prev"
+                  className="inline-flex items-center gap-1.5 rounded-[14px] border border-hairline bg-card px-5 py-3 text-[14px] font-bold text-ink shadow-soft-sm transition-colors hover:bg-bg-sunk"
+                >
+                  <Icon name="chevron" size={14} />
+                  What came before?
+                </Link>
+                <Link
+                  to="/review/locate"
+                  className="inline-flex items-center gap-1.5 rounded-[14px] border border-hairline bg-card px-5 py-3 text-[14px] font-bold text-ink shadow-soft-sm transition-colors hover:bg-bg-sunk"
+                >
+                  <Icon name="target" size={14} />
+                  Locate phrase
+                </Link>
+                <Link
+                  to="/review/connect"
+                  className="inline-flex items-center gap-1.5 rounded-[14px] border border-hairline bg-card px-5 py-3 text-[14px] font-bold text-ink shadow-soft-sm transition-colors hover:bg-bg-sunk"
+                >
+                  <Icon name="feather" size={14} />
+                  Connect sūrahs
+                </Link>
               </>
             )}
             <Link
@@ -248,6 +283,27 @@ export function HomePage() {
                         {JUZ_NAMES[juz] ?? `Juzʾ ${juz}`}
                       </div>
                       <div className="h-px flex-1 bg-hairline" />
+                      <Link
+                        to={`/listen/juz/${juz}`}
+                        className="inline-flex items-center gap-1.5 rounded-full border border-hairline bg-card px-3 py-1 font-mono text-[10px] font-bold uppercase tracking-[0.18em] text-ink-muted transition-colors hover:border-hero hover:text-hero-deep"
+                      >
+                        <Icon name="play" size={10} />
+                        Listen juzʾ
+                      </Link>
+                      <Link
+                        to={`/review/juz/${juz}/endings`}
+                        className="inline-flex items-center gap-1.5 rounded-full border border-hairline bg-card px-3 py-1 font-mono text-[10px] font-bold uppercase tracking-[0.18em] text-ink-muted transition-colors hover:border-medium hover:text-medium-deep"
+                      >
+                        <Icon name="timer" size={10} />
+                        Endings sprint
+                      </Link>
+                      <Link
+                        to={`/review/mixed?juz=${juz}&timed=300`}
+                        className="inline-flex items-center gap-1.5 rounded-full border border-hairline bg-card px-3 py-1 font-mono text-[10px] font-bold uppercase tracking-[0.18em] text-ink-muted transition-colors hover:border-hero hover:text-hero-deep"
+                      >
+                        <Icon name="target" size={10} />
+                        Marathon
+                      </Link>
                       <div className="font-mono text-[10px] text-ink-muted">
                         {list.length} sūrah{list.length === 1 ? '' : 's'}
                       </div>
@@ -347,6 +403,31 @@ export function HomePage() {
                         <Icon name="feather" size={12} />
                         Murājaʿah
                       </Link>
+                      <Link
+                        to={`/judge/${s.id}`}
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-hairline px-3 py-1.5 text-[12px] font-bold text-ink-soft transition-colors hover:border-hero hover:bg-hero-soft hover:text-hero-deep"
+                      >
+                        <Icon name="eye" size={12} />
+                        Judge
+                      </Link>
+                      {s.versesCount >= 3 && (
+                        <Link
+                          to={`/drill/${s.id}/endings`}
+                          className="inline-flex items-center gap-1.5 rounded-lg border border-hairline px-3 py-1.5 text-[12px] font-bold text-ink-soft transition-colors hover:border-medium hover:bg-medium-soft hover:text-medium-deep"
+                        >
+                          Endings
+                          <Icon name="arrow-r" size={12} />
+                        </Link>
+                      )}
+                      {s.versesCount >= 2 && (
+                        <Link
+                          to={`/drill/${s.id}/continue`}
+                          className="inline-flex items-center gap-1.5 rounded-lg border border-hairline px-3 py-1.5 text-[12px] font-bold text-ink-soft transition-colors hover:border-hero hover:bg-hero-soft hover:text-hero-deep"
+                        >
+                          Continue
+                          <Icon name="arrow-r" size={12} />
+                        </Link>
+                      )}
                       {mediumReady && s.versesCount >= 2 && (
                         <Link
                           to={`/drill/${s.id}/passage`}

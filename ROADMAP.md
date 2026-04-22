@@ -56,47 +56,53 @@ Build toward **Musābaqah mode** — a real Qurʾān-competition format where hu
 
 ---
 
-## v3 — Full muṣḥaf access
+## v3 — Depth & polish (in progress)
 
-**Scope**: Every surah in the Qurʾān, not just Juz ʿAmma.
+**Scope**: Make the current corpus (Juzʾ ʿAmma + Fātiḥa) exhaustively drillable, with listening and settings pulling their weight.
 
-**New**:
-- Backend introduced: **Supabase** for cross-device sync, auth (email + Google)
-- Juz / ḥizb / rubʿ browsing
-- Mushaf-page layout — drill within the visual page structure
-- Waqf / Ibtidāʾ mode — legal pause points
-- Draw-the-letter input on Hard (finger tracing)
-- Long-press to hear recitation (Easy/Medium chips)
+**Shipped**:
+- [x] Tap-to-hear on every ayah card (Listen button, wired into all round components)
+- [x] Juzʾ grouping on home page with collapsible sections
+- [x] Continuous sūrah listen (`/listen/:surahId`) — auto-advance, scroll-follow, reciter switch, text/translation toggles
+- [x] Continuous juzʾ listen (`/listen/juz/:juz`) — all ayat in a juzʾ back-to-back, grouped by sūrah
+- [x] Draw-the-letter drill (`/drill/write`) — canvas with ghost trace + self-judge
+- [x] Murājaʿah simulator (`/drill/:surahId/recite`) — reveal-then-self-judge, solid/shaky/missed
+- [x] Endings drill (`/drill/:surahId/endings`) — fāṣila / rhyme-word match
+- [x] Meaning-match review (`/review/meaning`) — Arabic → translation picker
+- [x] Settings page (`/settings`) — default reciter, rasm-only default, audio autoplay, reset progress
 
-**Content**:
-- Import full Tanzil.net Hafs ʿan ʿĀṣim Uthmani corpus
-- Multiple reciters (al-Husary, Mishary, Sudais, Minshawi) via everyayah.com
+**Skipped by desire for now** (per user: no DB/API/backend changes):
+- Supabase backend (auth, cross-device sync)
+- Full Tanzil Qurʾān corpus import (stays seeded on Juzʾ ʿAmma + Fātiḥa)
+- Mushaf-page visual layout (604 pages, needs layout engine)
+- Waqf / Ibtidāʾ pause-point overlay (no curated data)
 
 ---
 
-## v4 — Musābaqah: the competition engine
+## v4 — Musābaqah: the competition engine (in progress — frontend-only slice)
 
-**Scope**: The endgame. Real-time competition + judge mode.
+**Scope**: Real-competition drills. Backend-dependent items (Realtime multiplayer, tournaments) deferred.
 
-**Features**:
-- **Continue-from-here** — given ayat 1–3, continue through ayat 4–N
-- **What comes next / before** — free-form, any ayah
-- **Locate** — paste any phrase, which surah + ayah?
-- **Connect the ayat** — surah-to-surah transitions (end of X → start of Y)
-- **Head-to-head multiplayer** — real-time via Supabase Realtime (WebSockets)
-- **Judge mode** — one user reads, other judges, toggle muṣḥaf display
-- **Tournament brackets** — schedule group competitions (masjid / madrasah use)
-- **Marathon mode** — drill a full juz against the clock
+**Shipped**:
+- [x] **Continue-from-here** — `/drill/:surahId/continue`, chain through a whole sūrah from ayah 1
+- [x] **Juzʾ endings sprint** — `/review/juz/:juz/endings`, fāṣila drill pooled across every sūrah in the juzʾ
+- [x] **What comes next / before** — `/review/next[?dir=prev]`, picks the next/previous ayah for any prompt in the seeded corpus
+- [x] **Locate** — `/review/locate`, middle-phrase → sūrah + ayah identification across the corpus
+- [x] **Connect the ayat** — `/review/connect`, end of sūrah X → opener of sūrah X+1 picker
+- [x] **Marathon mode** — `/review/mixed?juz=N&timed=300`, full-juzʾ mixed-round chain against the clock
+- [x] **Judge mode (offline)** — `/judge/:surahId`, single-device solid/shaky/missed tap per ayah with optional hidden-mushaf mode
 
-**Scale concerns**:
-- Audio verification via Whisper or Tarteel API (speech-to-text for self-recitation checking)
-- Anti-cheat in competitions (tab focus detection, time tracking)
+**Skipped by desire for now** (needs backend / API):
+- Head-to-head multiplayer (Supabase Realtime)
+- Tournament brackets (accounts, scheduling)
+- Audio verification via Whisper / Tarteel (speech-to-text)
+- Anti-cheat in competitions
 
 ---
 
 ## v5+ — Beyond
 
-- **Native iOS + Android via Capacitor** — wraps the same React code, zero UI rewrite
+- **Native iOS + Android via Capacitor** — bootstrapped ✅ (`ios/` + `android/` projects, status bar + splash + back-button handlers, safe-area insets). Run `npm run mobile:ios` / `npm run mobile:android` to open in Xcode / Android Studio.
 - Multiple qirāʾāt (Warsh, Qālūn, etc.) — not just Hafs
 - Tafsīr-aware feedback via Claude API ("you mixed up X and Y, which means…")
 - School/madrasah admin dashboard — teacher assigns drills, tracks class progress

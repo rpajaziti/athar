@@ -16,13 +16,14 @@ import {
   type ProofreadRoundData,
   type TransitionRoundData,
 } from '@/components/drill/rounds'
-import { SURAH_BY_ID } from '@/data/quran'
+import { SURAHS, SURAH_BY_ID } from '@/data/quran'
 import { distractorsFor, type DistractorSet } from '@/data/distractors'
 import { shuffle } from '@/lib/drill'
 import { stripHarakat } from '@/lib/arabic'
 import { cn } from '@/lib/cn'
 import {
   getKnown,
+  getBookmarks,
   getRasmOnly,
   getReviewTiers,
   recordMixedAttempt,
@@ -33,6 +34,16 @@ import type { Surah } from '@/data/types'
 const TARGET_ROUNDS = 12
 const EDGE_WORDS = 3
 const MAX_TRANSITION_DISTRACTORS = 2
+
+function surahJuz(id: number): number {
+  if (id === 1) return 1
+  if (id >= 78 && id <= 114) return 30
+  if (id >= 67) return 29
+  if (id >= 58) return 28
+  if (id >= 51) return 27
+  if (id >= 46) return 26
+  return 1
+}
 
 function sliceLast(words: string[]): string {
   return words.slice(-Math.min(EDGE_WORDS, words.length)).join(' ')
@@ -278,31 +289,77 @@ export function MixedReviewPage() {
     const n = Number(raw)
     return Number.isFinite(n) && n > 0 ? Math.min(n, 300) : null
   })()
+  const starredOnly = params.get('starred') === '1'
+  const juzFilter = (() => {
+    const raw = params.get('juz')
+    if (!raw) return null
+    const n = Number(raw)
+    return Number.isInteger(n) && n >= 1 && n <= 30 ? n : null
+  })()
   const known = useMemo(() => getKnown(), [])
   const tiers = useMemo(() => getReviewTiers(), [])
   const rasmOnly = useMemo(() => getRasmOnly(), [])
+  const bookmarks = useMemo(() => getBookmarks(), [])
   const rounds = useMemo(() => {
-    if (known.length === 0) return []
-    const raw = shuffle(buildPool(known, tiers))
+    let sourceIds: number[] = known
+    if (starredOnly) {
+      sourceIds = Array.from(new Set(bookmarks.map((b) => b.surahId)))
+    }
+    if (juzFilter !== null) {
+      sourceIds = SURAHS.filter((s) => surahJuz(s.id) === juzFilter).map(
+        (s) => s.id,
+      )
+    }
+    if (sourceIds.length === 0) return []
+    let pool = buildPool(sourceIds, tiers)
+    if (starredOnly) {
+      const keep = new Set(
+        bookmarks.map((b) => `${b.surahId}:${b.ayahNumber}`),
+      )
+      pool = pool.filter((r) => {
+        if (r.kind === 'transition') {
+          return (
+            keep.has(`${r.surahId}:${r.fromAyah}`) ||
+            keep.has(`${r.surahId}:${r.toAyah}`)
+          )
+        }
+        return keep.has(`${r.surahId}:${r.ayahNumber}`)
+      })
+    }
+    const raw = shuffle(pool)
     const cap = timedSeconds ? Math.max(TARGET_ROUNDS, 30) : TARGET_ROUNDS
     const sliced = raw.slice(0, Math.min(cap, raw.length))
     return rasmOnly ? sliced.map(rasmRound) : sliced
-  }, [known, tiers, rasmOnly, timedSeconds])
+  }, [known, tiers, rasmOnly, timedSeconds, starredOnly, bookmarks, juzFilter])
 
-  if (known.length === 0) return <Navigate to="/review/pick" replace />
+  if (juzFilter === null && !starredOnly && known.length === 0)
+    return <Navigate to="/review/pick" replace />
+  if (starredOnly && bookmarks.length === 0) return <Navigate to="/bookmarks" replace />
   if (rounds.length === 0) return <Navigate to="/home" replace />
 
-  return <MixedDrill rounds={rounds} rasmOnly={rasmOnly} timedSeconds={timedSeconds} />
+  return (
+    <MixedDrill
+      rounds={rounds}
+      rasmOnly={rasmOnly}
+      timedSeconds={timedSeconds}
+      starredOnly={starredOnly}
+      juzFilter={juzFilter}
+    />
+  )
 }
 
 function MixedDrill({
   rounds,
   rasmOnly,
   timedSeconds,
+  starredOnly,
+  juzFilter,
 }: {
   rounds: AnyRound[]
   rasmOnly: boolean
   timedSeconds: number | null
+  starredOnly: boolean
+  juzFilter: number | null
 }) {
   const total = rounds.length
   const [states, setStates] = useState<RoundState[]>(() => rounds.map(initialState))
@@ -441,10 +498,35 @@ function MixedDrill({
     setDone(false)
   }
 
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (done) return
+      if (e.target instanceof HTMLElement) {
+        const tag = e.target.tagName
+        if (tag === 'INPUT' || tag === 'TEXTAREA' || e.target.isContentEditable) return
+      }
+      if (e.key === 'Enter' && roundDone) {
+        e.preventDefault()
+        handleAdvance()
+        return
+      }
+      if (current.kind === 'distractor' || current.kind === 'transition') {
+        if (state.kind !== 'pick' || state.picked !== null) return
+        const n = Number(e.key)
+        if (Number.isInteger(n) && n >= 1 && n <= current.options.length) {
+          e.preventDefault()
+          handlePick(current.options[n - 1])
+        }
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  })
+
   if (done) {
     return (
       <DrillShell
-        eyebrow="Mixed review · Results"
+        eyebrow={`Mixed${juzFilter !== null ? ` · Juzʾ ${juzFilter}` : ''}${starredOnly ? ' · Starred' : ''}${timedSeconds && juzFilter !== null ? ' · Marathon' : ''} review · Results`}
         title="Results"
         tone="hero"
         total={total}
@@ -463,11 +545,13 @@ function MixedDrill({
   }[current.kind]
 
   const rasmTag = rasmOnly ? ' · Rasm' : ''
-  const sprintTag = timedSeconds ? ' · Sprint' : ''
+  const sprintTag = timedSeconds ? (juzFilter !== null ? ' · Marathon' : ' · Sprint') : ''
+  const starredTag = starredOnly ? ' · Starred' : ''
+  const juzTag = juzFilter !== null ? ` · Juzʾ ${juzFilter}` : ''
   const eyebrow =
     current.kind === 'transition'
-      ? `Mixed${sprintTag}${rasmTag} · ${surah?.nameComplex ?? ''} · ${current.fromAyah}→${current.toAyah}`
-      : `Mixed${sprintTag}${rasmTag} · ${surah?.nameComplex ?? ''} · Ayah ${
+      ? `Mixed${juzTag}${starredTag}${sprintTag}${rasmTag} · ${surah?.nameComplex ?? ''} · ${current.fromAyah}→${current.toAyah}`
+      : `Mixed${juzTag}${starredTag}${sprintTag}${rasmTag} · ${surah?.nameComplex ?? ''} · Ayah ${
           (current as Exclude<AnyRound, TransitionRoundData>).ayahNumber
         }`
 

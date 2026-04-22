@@ -4,7 +4,12 @@ import { MushafGrid } from '@/components/ui/MushafGrid'
 import { Icon } from '@/components/ui/Icon'
 import { SURAH_BY_ID } from '@/data/quran'
 import { ayahAudioUrl, type Reciter } from '@/lib/audio'
-import { getReciter, setReciter as saveReciter } from '@/lib/progress'
+import {
+  getReciter,
+  setReciter as saveReciter,
+  isBookmarked,
+  toggleBookmark,
+} from '@/lib/progress'
 import { cn } from '@/lib/cn'
 
 export function ListenPage() {
@@ -19,6 +24,7 @@ export function ListenPage() {
   const [showTranslation, setShowTranslation] = useState(false)
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const activeRef = useRef<HTMLDivElement | null>(null)
+  const [starTick, setStarTick] = useState(0)
 
   useEffect(() => {
     if (!playing) return
@@ -165,6 +171,8 @@ export function ListenPage() {
         <div className="mt-8 grid gap-3">
           {surah.ayat.map((a) => {
             const isActive = a.number === currentAyah
+            const starred = isBookmarked(surahId, a.number)
+            void starTick
             return (
               <div
                 key={a.number}
@@ -185,11 +193,33 @@ export function ListenPage() {
                     <Icon name="play" size={10} />
                     Ayah {a.number}
                   </button>
-                  {isActive && playing && (
-                    <span className="font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-hero-deep">
-                      ● Playing
-                    </span>
-                  )}
+                  <div className="flex items-center gap-2">
+                    {isActive && playing && (
+                      <span className="font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-hero-deep">
+                        ● Playing
+                      </span>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        toggleBookmark(surahId, a.number)
+                        setStarTick((t) => t + 1)
+                      }}
+                      aria-label={starred ? 'Unbookmark ayah' : 'Bookmark ayah'}
+                      className="inline-flex items-center rounded-md border border-hairline bg-card px-1.5 py-1 transition-colors hover:border-hero"
+                      style={{
+                        color: starred
+                          ? 'var(--color-hero-deep)'
+                          : 'var(--color-ink-muted)',
+                        borderColor: starred ? 'var(--color-hero)' : undefined,
+                        background: starred
+                          ? 'color-mix(in oklch, var(--color-hero) 10%, transparent)'
+                          : undefined,
+                      }}
+                    >
+                      <Icon name={starred ? 'star-filled' : 'star'} size={12} />
+                    </button>
+                  </div>
                 </div>
                 {showText && (
                   <div

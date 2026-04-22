@@ -1,7 +1,7 @@
 import { useRef, useState, type ReactNode } from 'react'
 import { Icon } from '@/components/ui/Icon'
 import { ayahAudioUrl, type Reciter } from '@/lib/audio'
-import { getReciter } from '@/lib/progress'
+import { getReciter, isBookmarked, toggleBookmark } from '@/lib/progress'
 
 interface Props {
   children: ReactNode
@@ -13,6 +13,9 @@ interface Props {
 export function AyahCard({ children, translation, ayahNumber, audio }: Props) {
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const [playing, setPlaying] = useState(false)
+  const [starred, setStarred] = useState(() =>
+    audio ? isBookmarked(audio.surahId, audio.ayahNumber) : false,
+  )
 
   const handlePlay = () => {
     if (!audio) return
@@ -44,17 +47,40 @@ export function AyahCard({ children, translation, ayahNumber, audio }: Props) {
           ) : (
             <span />
           )}
-          {ayahNumber !== undefined && (
-            <div className="flex items-center gap-2 font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-ink-muted">
-              Ayah {ayahNumber}
-              <span
-                className="flex h-6 w-6 items-center justify-center rounded-full border text-[11px] text-ink-soft"
-                style={{ borderColor: 'var(--color-hairline)' }}
+          <div className="flex items-center gap-2">
+            {audio && (
+              <button
+                type="button"
+                onClick={() => {
+                  if (!audio) return
+                  const now = toggleBookmark(audio.surahId, audio.ayahNumber)
+                  setStarred(now)
+                }}
+                aria-label={starred ? 'Unbookmark ayah' : 'Bookmark ayah'}
+                className="inline-flex items-center gap-1 rounded-md border border-hairline bg-card px-1.5 py-1 text-ink-muted transition-colors hover:border-hero hover:text-hero-deep"
+                style={{
+                  color: starred ? 'var(--color-hero-deep)' : undefined,
+                  borderColor: starred ? 'var(--color-hero)' : undefined,
+                  background: starred
+                    ? 'color-mix(in oklch, var(--color-hero) 10%, transparent)'
+                    : undefined,
+                }}
               >
-                {ayahNumber}
-              </span>
-            </div>
-          )}
+                <Icon name={starred ? 'star-filled' : 'star'} size={12} />
+              </button>
+            )}
+            {ayahNumber !== undefined && (
+              <div className="flex items-center gap-2 font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-ink-muted">
+                Ayah {ayahNumber}
+                <span
+                  className="flex h-6 w-6 items-center justify-center rounded-full border text-[11px] text-ink-soft"
+                  style={{ borderColor: 'var(--color-hairline)' }}
+                >
+                  {ayahNumber}
+                </span>
+              </div>
+            )}
+          </div>
         </div>
       )}
       <div className="text-center">{children}</div>

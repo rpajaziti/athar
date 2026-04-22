@@ -18,6 +18,12 @@ export type ReviewTier = 'easy' | 'medium' | 'hard' | 'expert'
 
 export type ReciterPref = 'Husary_128kbps' | 'Alafasy_128kbps' | 'Minshawy_Murattal_128kbps'
 
+export interface Bookmark {
+  surahId: number
+  ayahNumber: number
+  addedAt: number
+}
+
 export interface ProgressData {
   version: 1
   streak: number
@@ -31,6 +37,7 @@ export interface ProgressData {
   rasmOnly: boolean
   reciter: ReciterPref
   autoplay: boolean
+  bookmarks: Bookmark[]
 }
 
 const DEFAULT_REVIEW_TIERS: ReviewTier[] = ['easy', 'medium', 'hard', 'expert']
@@ -50,6 +57,7 @@ function emptyData(): ProgressData {
     rasmOnly: false,
     reciter: 'Husary_128kbps',
     autoplay: true,
+    bookmarks: [],
   }
 }
 
@@ -85,6 +93,7 @@ function read(): ProgressData {
       rasmOnly: parsed.rasmOnly ?? false,
       reciter: parsed.reciter ?? 'Husary_128kbps',
       autoplay: parsed.autoplay ?? true,
+      bookmarks: parsed.bookmarks ?? [],
     }
   } catch {
     return emptyData()
@@ -227,6 +236,31 @@ export function setAutoplay(v: boolean): void {
   const data = read()
   data.autoplay = v
   write(data)
+}
+
+export function getBookmarks(): Bookmark[] {
+  return read().bookmarks.slice().sort((a, b) => b.addedAt - a.addedAt)
+}
+
+export function isBookmarked(surahId: number, ayahNumber: number): boolean {
+  return read().bookmarks.some(
+    (b) => b.surahId === surahId && b.ayahNumber === ayahNumber,
+  )
+}
+
+export function toggleBookmark(surahId: number, ayahNumber: number): boolean {
+  const data = read()
+  const existing = data.bookmarks.findIndex(
+    (b) => b.surahId === surahId && b.ayahNumber === ayahNumber,
+  )
+  if (existing >= 0) {
+    data.bookmarks.splice(existing, 1)
+    write(data)
+    return false
+  }
+  data.bookmarks.push({ surahId, ayahNumber, addedAt: Date.now() })
+  write(data)
+  return true
 }
 
 export interface WeakSlot {

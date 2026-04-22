@@ -18,6 +18,8 @@ export type IconName =
   | 'feather'
   | 'eye'
   | 'play'
+  | 'star'
+  | 'star-filled'
 
 interface IconProps extends Omit<SVGProps<SVGSVGElement>, 'name'> {
   name: IconName
@@ -146,6 +148,18 @@ export function Icon({ name, size = 20, ...rest }: IconProps) {
       return (
         <svg {...common} fill="currentColor" stroke="none">
           <path d="M7 4l13 8-13 8V4z" />
+        </svg>
+      )
+    case 'star':
+      return (
+        <svg {...common}>
+          <path d="M12 3l2.5 5.5 6 .6-4.5 4.1 1.3 5.9L12 16.2 6.7 19.1 8 13.2 3.5 9.1l6-.6z" />
+        </svg>
+      )
+    case 'star-filled':
+      return (
+        <svg {...common} fill="currentColor" stroke="none">
+          <path d="M12 3l2.5 5.5 6 .6-4.5 4.1 1.3 5.9L12 16.2 6.7 19.1 8 13.2 3.5 9.1l6-.6z" />
         </svg>
       )
   }
