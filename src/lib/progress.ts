@@ -32,6 +32,7 @@ export interface ProgressData {
   lastActiveDay: string | null
   totalCorrect: number
   totalAttempts: number
+  totalQuestions: number
   surahs: Record<string, SurahRecord>
   foundations?: TierRecord
   known: number[]
@@ -53,6 +54,7 @@ function emptyData(): ProgressData {
     lastActiveDay: null,
     totalCorrect: 0,
     totalAttempts: 0,
+    totalQuestions: 0,
     surahs: {},
     known: [],
     reviewTiers: [...DEFAULT_REVIEW_TIERS],
@@ -124,6 +126,30 @@ function schedulePush(data: ProgressData): void {
   }, 1200)
 }
 
+async function logAttempt(input: {
+  tier: string
+  surahId?: number
+  correct: number
+  total: number
+}): Promise<void> {
+  if (!supabase) return
+  try {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+    if (!user) return
+    await supabase.from('attempts').insert({
+      user_id: user.id,
+      tier: input.tier,
+      surah_id: input.surahId ?? null,
+      correct: input.correct,
+      total: input.total,
+    })
+  } catch {
+    /* best-effort */
+  }
+}
+
 async function pushNow(data: ProgressData): Promise<void> {
   if (!supabase) return
   const serialized = JSON.stringify(data)
@@ -149,6 +175,7 @@ function mergeProgress(cloud: ProgressData, local: ProgressData): ProgressData {
   out.lastActiveDay = cloudDay >= localDay ? cloud.lastActiveDay : local.lastActiveDay
   out.totalAttempts = Math.max(cloud.totalAttempts, local.totalAttempts)
   out.totalCorrect = Math.max(cloud.totalCorrect, local.totalCorrect)
+  out.totalQuestions = Math.max(cloud.totalQuestions ?? 0, local.totalQuestions ?? 0)
 
   const surahIds = new Set([
     ...Object.keys(cloud.surahs ?? {}),
@@ -294,6 +321,7 @@ export function recordAttempt(input: AttemptInput): ProgressData {
 
   data.totalAttempts += 1
   data.totalCorrect += input.correct
+  data.totalQuestions += input.total
   updateStreak(data)
 
   if (input.tier === 'foundations') {
@@ -306,6 +334,12 @@ export function recordAttempt(input: AttemptInput): ProgressData {
   }
 
   write(data)
+  void logAttempt({
+    tier: input.tier,
+    surahId: input.surahId,
+    correct: input.correct,
+    total: input.total,
+  })
   return data
 }
 
@@ -333,9 +367,10 @@ export function recordMixedAttempt(correct: number, total: number): ProgressData
   const data = read()
   data.totalAttempts += 1
   data.totalCorrect += correct
-  void total
+  data.totalQuestions += total
   updateStreak(data)
   write(data)
+  void logAttempt({ tier: 'mixed', correct, total })
   return data
 }
 

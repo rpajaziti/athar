@@ -6,11 +6,14 @@ import { useAuth } from '@/lib/auth'
 import { isSupabaseConfigured } from '@/lib/supabase'
 import {
   acceptFriendRequest,
+  declineFriendRequest,
+  errMsg,
   getMyProfile,
   listFriendships,
   removeFriendship,
   searchUsers,
   sendFriendRequest,
+  setFriendable,
   setHandle,
   type FriendEntry,
   type PublicProfile,
@@ -25,6 +28,7 @@ export function FriendsPage() {
   const [accepted, setAccepted] = useState<FriendEntry[]>([])
   const [incoming, setIncoming] = useState<FriendEntry[]>([])
   const [outgoing, setOutgoing] = useState<FriendEntry[]>([])
+  const [blockedIds, setBlockedIds] = useState<Set<string>>(new Set())
   const [tab, setTab] = useState<Tab>('friends')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -37,8 +41,9 @@ export function FriendsPage() {
       setAccepted(f.accepted)
       setIncoming(f.incoming)
       setOutgoing(f.outgoing)
+      setBlockedIds(f.blockedIds)
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e))
+      setError(errMsg(e))
     } finally {
       setLoading(false)
     }
@@ -100,6 +105,7 @@ export function FriendsPage() {
           <>
             <FindFriends
               pendingIds={pendingIds}
+              blockedIds={blockedIds}
               meId={user.id}
               onRequested={load}
             />
@@ -156,7 +162,7 @@ export function FriendsPage() {
                         <ActionBtn
                           tone="ghost"
                           onClick={async () => {
-                            await removeFriendship(e.other.user_id)
+                            await declineFriendRequest(e.other.user_id)
                             await load()
                           }}
                         >
@@ -213,7 +219,7 @@ function HandleSection({
       setValue('')
       await onSaved()
     } catch (e) {
-      setErr(e instanceof Error ? e.message : String(e))
+      setErr(errMsg(e))
     } finally {
       setSaving(false)
     }
@@ -225,10 +231,13 @@ function HandleSection({
         Your handle
       </div>
       {current ? (
-        <div className="mt-2 flex items-center gap-2">
-          <div className="text-[18px] font-bold text-ink">@{current}</div>
-          <div className="text-[12px] text-ink-muted">· set</div>
-        </div>
+        <>
+          <div className="mt-2 flex items-center gap-2">
+            <div className="text-[18px] font-bold text-ink">@{current}</div>
+            <div className="text-[12px] text-ink-muted">· set</div>
+          </div>
+          <FriendableToggle profile={profile} onSaved={onSaved} />
+        </>
       ) : (
         <>
           <h2 className="mt-2 text-[16px] font-bold text-ink">Pick a handle.</h2>
@@ -266,12 +275,75 @@ function HandleSection({
   )
 }
 
+function FriendableToggle({
+  profile,
+  onSaved,
+}: {
+  profile: PublicProfile | null
+  onSaved: () => Promise<void>
+}) {
+  const current = profile?.friendable !== false
+  const [busy, setBusy] = useState(false)
+  const [err, setErr] = useState<string | null>(null)
+
+  const flip = async () => {
+    setErr(null)
+    setBusy(true)
+    try {
+      await setFriendable(!current)
+      await onSaved()
+    } catch (e) {
+      setErr(errMsg(e))
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <div className="mt-4 flex items-start justify-between gap-3 rounded-[12px] border border-hairline bg-bg px-3 py-2.5">
+      <div className="min-w-0">
+        <div className="text-[13px] font-bold text-ink">Allow friend requests</div>
+        <div className="text-[12px] text-ink-muted">
+          {current
+            ? "Others can send you requests. You still choose what to accept."
+            : 'Others can find you but cannot request to add you.'}
+        </div>
+        {err && (
+          <div className="mt-2 rounded-[10px] border border-hard/40 bg-hard-soft px-2.5 py-1.5 text-[11px] text-hard-deep">
+            {err}
+          </div>
+        )}
+      </div>
+      <button
+        type="button"
+        onClick={flip}
+        disabled={busy}
+        aria-pressed={current}
+        className={cn(
+          'relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors',
+          current ? 'bg-ink' : 'bg-hairline',
+          busy && 'opacity-60',
+        )}
+      >
+        <span
+          className={cn(
+            'inline-block h-5 w-5 transform rounded-full bg-bg shadow-soft-sm transition-transform',
+            current ? 'translate-x-[22px]' : 'translate-x-0.5',
+          )}
+        />
+      </button>
+    </div>
+  )
+}
+
 function FindFriends({
   pendingIds,
+  blockedIds,
   meId,
   onRequested,
 }: {
   pendingIds: Set<string>
+  blockedIds: Set<string>
   meId: string
   onRequested: () => Promise<void>
 }) {
@@ -294,7 +366,7 @@ function FindFriends({
         const r = await searchUsers(q)
         setResults(r)
       } catch (e) {
-        setErr(e instanceof Error ? e.message : String(e))
+        setErr(errMsg(e))
       } finally {
         setSearching(false)
       }
@@ -330,7 +402,20 @@ function FindFriends({
             <div className="text-[13px] text-ink-muted">No matches.</div>
           )}
           {results.map((r) => {
-            const pending = pendingIds.has(r.user_id) || r.user_id === meId
+            const isSelf = r.user_id === meId
+            const alreadyPending = pendingIds.has(r.user_id)
+            const blocked = blockedIds.has(r.user_id)
+            const notFriendable = r.friendable === false
+            const disabled = isSelf || alreadyPending || blocked || notFriendable
+            const label = isSelf
+              ? 'You'
+              : alreadyPending
+                ? 'Pending'
+                : blocked
+                  ? 'Unavailable'
+                  : notFriendable
+                    ? 'Not accepting'
+                    : null
             return (
               <div
                 key={r.user_id}
@@ -339,24 +424,24 @@ function FindFriends({
                 <ProfileBadge p={r} />
                 <button
                   type="button"
-                  disabled={pending}
+                  disabled={disabled}
                   onClick={async () => {
                     try {
                       await sendFriendRequest(r.user_id)
                       await onRequested()
                       setQ('')
                     } catch (e) {
-                      setErr(e instanceof Error ? e.message : String(e))
+                      setErr(errMsg(e))
                     }
                   }}
                   className={cn(
                     'inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[12px] font-bold transition-colors',
-                    pending
+                    disabled
                       ? 'border border-hairline bg-bg-sunk text-ink-muted'
                       : 'bg-ink text-bg hover:opacity-90',
                   )}
                 >
-                  {pending ? 'Pending' : (<><Icon name="user-plus" size={12} /> Add</>)}
+                  {label ?? (<><Icon name="user-plus" size={12} /> Add</>)}
                 </button>
               </div>
             )

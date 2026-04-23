@@ -1,10 +1,23 @@
 import { supabase } from './supabase'
 
+export function errMsg(e: unknown): string {
+  if (e instanceof Error) return e.message
+  if (e && typeof e === 'object') {
+    const o = e as { message?: unknown; details?: unknown; hint?: unknown; code?: unknown }
+    const msg = typeof o.message === 'string' ? o.message : null
+    const det = typeof o.details === 'string' ? o.details : null
+    const code = typeof o.code === 'string' ? ` (${o.code})` : ''
+    if (msg || det) return `${msg ?? det}${code}`
+  }
+  return String(e)
+}
+
 export interface PublicProfile {
   user_id: string
   handle: string | null
   display_name: string | null
   avatar_url: string | null
+  friendable?: boolean
 }
 
 export interface FriendshipRow {
@@ -28,11 +41,23 @@ export async function getMyProfile(): Promise<PublicProfile | null> {
   if (!uid) return null
   const { data, error } = await supabase
     .from('profiles')
-    .select('user_id, handle, display_name, avatar_url')
+    .select('user_id, handle, display_name, avatar_url, friendable')
     .eq('user_id', uid)
     .maybeSingle()
   if (error) throw error
   return (data as PublicProfile | null) ?? null
+}
+
+export async function setFriendable(friendable: boolean): Promise<void> {
+  if (!supabase) throw new Error('Supabase not configured')
+  const { data: auth } = await supabase.auth.getUser()
+  const uid = auth.user?.id
+  if (!uid) throw new Error('Not signed in')
+  const { error } = await supabase
+    .from('profiles')
+    .update({ friendable })
+    .eq('user_id', uid)
+  if (error) throw error
 }
 
 export async function setHandle(handle: string): Promise<void> {
@@ -67,11 +92,12 @@ export async function listFriendships(): Promise<{
   accepted: FriendEntry[]
   incoming: FriendEntry[]
   outgoing: FriendEntry[]
+  blockedIds: Set<string>
 }> {
-  if (!supabase) return { accepted: [], incoming: [], outgoing: [] }
+  if (!supabase) return { accepted: [], incoming: [], outgoing: [], blockedIds: new Set() }
   const { data: auth } = await supabase.auth.getUser()
   const uid = auth.user?.id
-  if (!uid) return { accepted: [], incoming: [], outgoing: [] }
+  if (!uid) return { accepted: [], incoming: [], outgoing: [], blockedIds: new Set() }
 
   const { data: rows, error } = await supabase
     .from('friendships')
@@ -97,6 +123,7 @@ export async function listFriendships(): Promise<{
   const accepted: FriendEntry[] = []
   const incoming: FriendEntry[] = []
   const outgoing: FriendEntry[] = []
+  const blockedIds = new Set<string>()
 
   for (const r of friendships) {
     const otherId = r.requester_id === uid ? r.addressee_id : r.requester_id
@@ -117,11 +144,13 @@ export async function listFriendships(): Promise<{
     } else if (r.status === 'pending') {
       if (r.requester_id === uid) outgoing.push(entry)
       else incoming.push(entry)
+    } else if (r.status === 'blocked') {
+      blockedIds.add(otherId)
     }
   }
 
   accepted.sort((a, b) => (a.other.handle ?? '').localeCompare(b.other.handle ?? ''))
-  return { accepted, incoming, outgoing }
+  return { accepted, incoming, outgoing, blockedIds }
 }
 
 export async function sendFriendRequest(targetUserId: string): Promise<void> {
@@ -137,8 +166,24 @@ export async function sendFriendRequest(targetUserId: string): Promise<void> {
   })
   if (error) {
     if (error.code === '23505') throw new Error('Friend request already exists.')
+    if (error.message?.includes('NOT_FRIENDABLE')) {
+      throw new Error("This user isn't accepting friend requests.")
+    }
     throw error
   }
+}
+
+export async function declineFriendRequest(requesterId: string): Promise<void> {
+  if (!supabase) throw new Error('Supabase not configured')
+  const { data: auth } = await supabase.auth.getUser()
+  const uid = auth.user?.id
+  if (!uid) throw new Error('Not signed in')
+  const { error } = await supabase
+    .from('friendships')
+    .update({ status: 'blocked' })
+    .eq('requester_id', requesterId)
+    .eq('addressee_id', uid)
+  if (error) throw error
 }
 
 export async function acceptFriendRequest(requesterId: string): Promise<void> {
