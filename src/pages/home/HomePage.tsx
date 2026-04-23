@@ -134,6 +134,26 @@ export function HomePage() {
             <Icon name="shield" size={16} />
             <span className="hidden sm:inline">Settings</span>
           </Link>
+          {isSupabaseConfigured && user && (
+            <>
+              <Link
+                to="/friends"
+                aria-label="Friends"
+                className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-ink-muted transition-colors hover:text-ink"
+              >
+                <Icon name="users" size={16} />
+                <span className="hidden sm:inline">Friends</span>
+              </Link>
+              <Link
+                to="/leaderboard"
+                aria-label="Leaderboard"
+                className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-ink-muted transition-colors hover:text-ink"
+              >
+                <Icon name="star" size={16} />
+                <span className="hidden sm:inline">Ranks</span>
+              </Link>
+            </>
+          )}
           {isSupabaseConfigured &&
             (user ? (
               <button

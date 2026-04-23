@@ -35,6 +35,7 @@ import { SurahPage } from './pages/surah/SurahPage'
 import { LoginPage } from './pages/auth/LoginPage'
 import { CallbackPage } from './pages/auth/CallbackPage'
 import { FriendsPage } from './pages/friends/FriendsPage'
+import { LeaderboardPage } from './pages/leaderboard/LeaderboardPage'
 
 export const router = createBrowserRouter([
   {
@@ -70,6 +71,8 @@ export const router = createBrowserRouter([
       { path: '/drill/:surahId/continue', element: <ContinuePage /> },
       { path: '/settings', element: <SettingsPage /> },
       { path: '/bookmarks', element: <BookmarksPage /> },
+      { path: '/friends', element: <FriendsPage /> },
+      { path: '/leaderboard', element: <LeaderboardPage /> },
       { path: '/examples', element: <ExamplesPage /> },
       { path: '/surah/:surahId', element: <SurahPage /> },
       { path: '/login', element: <LoginPage /> },
